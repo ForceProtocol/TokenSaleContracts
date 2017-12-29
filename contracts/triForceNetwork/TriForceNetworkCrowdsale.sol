@@ -22,9 +22,32 @@ contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, EthCappedCrowdsale, R
 
   }
 
+  function bonusFactor() public constant returns (uint256) {
+    if(now < startTime || now > endTime) return 0;
+
+    if(totalSupply < 15000000e18) {
+      return 25;
+    }
+    else if(totalSupply < 45000000e18) {
+      return 20;
+    }
+    else if(totalSupply < 120000000e18) {
+      return 10;
+    }
+    else if(totalSupply < 570000000e18) {
+      return 5;
+    }
+    else if(totalSupply < 1170000000e18) {
+      return 3;
+    }
+    else {
+      return 0;
+    }
+  }
+
   // low level token purchase function
   function buyTokens(address beneficiary) public whenNotPaused payable {
-    uint256 tokens = _buyTokens(beneficiary, rate.mul(100).add(bonusFactor()));
+    uint256 tokens = _buyTokens(beneficiary, rate.add(rate.mul(bonusFactor()).div(100)));
     if(!setSupply(totalSupply.add(tokens))) revert();
   }
 }

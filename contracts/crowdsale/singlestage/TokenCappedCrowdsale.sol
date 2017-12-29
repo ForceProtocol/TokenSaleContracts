@@ -16,12 +16,6 @@ contract TokenCappedCrowdsale is Crowdsale {
       tokenCap = _tokenCap;
   }
 
-  // low level token purchase function
-  function buyTokens(address beneficiary) public payable {
-    uint256 tokens = _buyTokens(beneficiary, rate);
-    if(!setSupply(totalSupply.add(tokens))) revert();
-  }
-
   function setSupply(uint256 newSupply) internal constant returns (bool) {
     totalSupply = newSupply;
     return tokenCap >= totalSupply;

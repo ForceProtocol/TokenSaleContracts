@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
 import '../Pausable.sol';
-import './multistage/Crowdsale.sol';
+import './singlestage/Crowdsale.sol';
 
 /**
  * @title PausableCrowdsale
@@ -18,10 +18,5 @@ contract PausableCrowdsale is Crowdsale, Pausable {
 
   function transferTokenOwnership(address _nextOwner) onlyAdmins whenPaused {
     Token(tokenAddr).transferOwnership(_nextOwner);
-  }
-
-  // low level token purchase function
-  function buyTokens(address beneficiary) public whenNotPaused payable {
-    super.buyTokens(beneficiary);
   }
 }
