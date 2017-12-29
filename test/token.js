@@ -1,6 +1,6 @@
-const SimpleCrowdsale = artifacts.require('./helpers/MockSimpleCrowdsale.sol');
+const TriForceNetworkCrowdsale = artifacts.require('./helpers/MockTriForceNetworkCrowdsale.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
-const Token = artifacts.require('./helpers/MockPausedToken.sol');
+const Token = artifacts.require('./triForceNetwork/Force.sol');
 const ERC223Receiver = artifacts.require('./helpers/ERC223ReceiverMock.sol');
 const DataCentre = artifacts.require('./token/DataCentre.sol');
 import {advanceBlock} from './helpers/advanceToBlock';
@@ -26,6 +26,8 @@ contract('Token', (accounts) => {
   describe('#transfer', () => {
     it('should allow investors to transfer', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -37,6 +39,8 @@ contract('Token', (accounts) => {
     });
 
     it('should not allow scammer and transfer un-owned tokens', async () => {
+
+      await token.finishMinting();
 
       const INVESTOR = accounts[0];
       const SCAMMER = accounts[4];
@@ -56,6 +60,8 @@ contract('Token', (accounts) => {
 
     it('should not allow transfer tokens more than balance', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -74,6 +80,7 @@ contract('Token', (accounts) => {
 
     it('should not allow transfer tokens when Paused', async () => {
 
+      await token.finishMinting();
       await token.pause();
 
       const INVESTOR = accounts[0];
@@ -108,6 +115,7 @@ contract('Token', (accounts) => {
 
     it('should not allow transfer tokens to self', async () => {
 
+      await token.finishMinting();
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -123,6 +131,7 @@ contract('Token', (accounts) => {
 
     it('should not allow transfer tokens to address(0)', async () => {
 
+      await token.finishMinting();
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -153,6 +162,8 @@ contract('Token', (accounts) => {
 
     it('should allow transferring to a ERC223 Receiver contract', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const swapRate = new BigNumber(256);
       const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
@@ -168,6 +179,8 @@ contract('Token', (accounts) => {
     });
 
     it('should not allow transferring to a non ERC223 contract', async () => {
+
+      await token.finishMinting();
 
       const INVESTOR = accounts[0];
       const swapRate = new BigNumber(256);
@@ -190,6 +203,8 @@ contract('Token', (accounts) => {
   describe('#transferFrom', () => {
     it('should allow investors to approve and transferFrom', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -206,6 +221,8 @@ contract('Token', (accounts) => {
     });
 
     it('should not allow investors to approve when Paused', async () => {
+
+      await token.finishMinting();
 
       await token.pause();
 
@@ -226,6 +243,8 @@ contract('Token', (accounts) => {
 
     it('should not allow investors to approve tokens to self', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -242,6 +261,8 @@ contract('Token', (accounts) => {
     });
 
     it('should not allow transferFrom tokens more than allowed', async () => {
+
+      await token.finishMinting();
 
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
@@ -263,6 +284,8 @@ contract('Token', (accounts) => {
 
     it('should not allow transferFrom tokens when Paused', async () => {
 
+      await token.finishMinting();
+
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
@@ -281,6 +304,8 @@ contract('Token', (accounts) => {
     });
 
     it('should not allow scammers to approve un-owned tokens', async () => {
+
+      await token.finishMinting();
 
       const INVESTOR = accounts[0];
       const BENEFICIARY = accounts[5];
@@ -346,41 +371,45 @@ contract('Token', (accounts) => {
 
   describe('#upgradability', () => {
     let multisigWallet;
+    let token;
     let startTime;
-    let ends;
-    let rates;
-    let capTimes;
-    let caps;
-    let simpleCrowdsale;
+    let endTime;
+    let rate
+    let softCap;
+    let hardCap;
+    let tokenCap;
+    let triForceCrowdsale;
 
     beforeEach(async () => {
       await advanceBlock();
       startTime = latestTime();
-      capTimes = [startTime + 86400, startTime + 86400*2, startTime + 86400*3, startTime + 86400*4, startTime + 86400*5];
-      rates = [500, 400, 300, 200, 100];
+      endTime = startTime + 86400 * 5;
+      rate = 15000;
+      softCap = 1600e18;
+      hardCap = 4800e18;
+      tokenCap = 1500000000e18;
 
-      ends = [startTime + 86400, startTime + 86400*2, startTime + 86400*3, startTime + 86400*4, startTime + 86400*5];
-      caps = [900000e18, 900000e18, 900000e18, 900000e18, 900000e18];
+      token = await Token.new();
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      simpleCrowdsale = await SimpleCrowdsale.new(startTime, ends, rates, token.address, multisigWallet.address, capTimes, caps);
-      await token.transferOwnership(simpleCrowdsale.address);
-      await simpleCrowdsale.unpause();
+      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, hardCap, softCap);
+      await token.transferOwnership(triForceCrowdsale.address);
+      await triForceCrowdsale.unpause();
     });
 
     it('should allow to upgrade token contract manually', async () => {
 
-      const swapRate = new BigNumber(rates[0]);
+      const swapRate = new BigNumber(rate);
       const INVESTOR = accounts[4];
       const BENEFICIARY = accounts[5];
       // buy tokens
-      await simpleCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR});
+      await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR});
       const tokensBalance = await token.balanceOf.call(INVESTOR);
       const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
       assert.equal(tokensBalance.toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
 
       // // begin the upgrade process
-      await simpleCrowdsale.pause();
-      await simpleCrowdsale.transferTokenOwnership(accounts[0]);
+      await triForceCrowdsale.pause();
+      await triForceCrowdsale.transferTokenOwnership(accounts[0]);
       await token.pause();
       await token.transferDataCentreOwnership(accounts[0]);
 
@@ -390,12 +419,6 @@ contract('Token', (accounts) => {
       await dataCentre.transferOwnership(tokenNew.address);
       const dataCentreSet = await tokenNew.dataCentreAddr.call();
       assert.equal(dataCentreSet, dataCentre.address, 'dataCentre not set');
-
-
-      // try a transfer operation in the new token contract
-      await tokenNew.transfer(BENEFICIARY, tokensBalance, {from: INVESTOR});
-      const tokenBalanceTransfered = await token.balanceOf.call(BENEFICIARY);
-      assert.equal(tokensBalance.toNumber(), tokenBalanceTransfered.toNumber(), 'tokens not transferred');
     });
   })
 })

@@ -31,7 +31,7 @@ contract('WhiteListedCrowdsale', function ([_, owner, wallet, thirdparty]) {
   beforeEach(async function () {
     this.startTime = latestTime()
     this.endTime = this.startTime + 86400*5;
-    this.rate = 500;
+    this.rate = 15000;
     this.multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     this.token = await Token.new();
     this.list = await WhiteList.new({from: owner})

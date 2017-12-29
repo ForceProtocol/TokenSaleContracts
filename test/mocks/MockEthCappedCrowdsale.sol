@@ -24,7 +24,7 @@ contract MockEthCappedCrowdsale is EthCappedCrowdsale {
 
   }
 
-  function diluteCap() public {
+  function diluteCaps() public {
     // diluting all caps by 10^6 for testing
     hardCap = hardCap.div(1e6);
   }

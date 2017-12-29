@@ -23,7 +23,7 @@ contract('EthCappedCrowdsale', (accounts) => {
     await advanceBlock();
     startTime = latestTime();
     endTime = startTime + 86400*5;
-    rate = 500;
+    rate = 15000;
     hardCap = 90000e18;
 
     token = await Token.new();
@@ -74,7 +74,7 @@ contract('EthCappedCrowdsale', (accounts) => {
   describe('#purchaseBelowCap', () => {
 
     beforeEach(async () => {
-      await ethCappedCrowdsale.diluteCap();
+      await ethCappedCrowdsale.diluteCaps();
     });
 
     it('should allow investors to buy for ether just below hardCap', async () => {
@@ -98,7 +98,7 @@ contract('EthCappedCrowdsale', (accounts) => {
   describe('#purchaseCap', () => {
 
     beforeEach(async () => {
-      await ethCappedCrowdsale.diluteCap();
+      await ethCappedCrowdsale.diluteCaps();
     });
 
     it('should allow investors to buy for ether just equal to hardCap', async () => {
@@ -122,7 +122,7 @@ contract('EthCappedCrowdsale', (accounts) => {
   describe('#purchaseOverCap', () => {
 
     beforeEach(async () => {
-      await ethCappedCrowdsale.diluteCap();
+      await ethCappedCrowdsale.diluteCaps();
     });
 
     it('should allow investors to buy for ether above hardCap', async () => {

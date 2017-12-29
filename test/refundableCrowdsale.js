@@ -31,7 +31,7 @@ contract('RefundableCrowdsale', function ([_, owner, investor]) {
   beforeEach(async function () {
     this.startTime = latestTime() + duration.weeks(1)
     this.endTime = this.startTime + 86400*5;
-    this.rate = 500;
+    this.rate = 15000;
     this.multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     this.token = await Token.new();
     this.crowdsale = await RefundableCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, goal, {from: owner})
