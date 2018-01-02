@@ -18,11 +18,11 @@ contract FinalizableCrowdsale is TokenCappedCrowdsale, Ownable {
    * @dev Must be called after crowdsale ends, to do some extra finalization
    * work. Calls the contract's finalization function.
    */
-  function finalize() onlyOwner public {
+  function finalize(address _beneficiary) onlyOwner public {
     require(!isFinalized);
     require(hasEnded());
 
-    finalization();
+    finalization(_beneficiary);
     Finalized();
 
     isFinalized = true;
@@ -33,6 +33,8 @@ contract FinalizableCrowdsale is TokenCappedCrowdsale, Ownable {
    * should call super.finalization() to ensure the chain of finalization is
    * executed entirely.
    */
-  function finalization() internal {
+  function finalization(address _beneficiary) internal {
+    uint256 founderShares = totalSupply.div(3);
+    Token(tokenAddr).mint(beneficiary, founderShares);
   }
 }
