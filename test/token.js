@@ -1,5 +1,6 @@
 const TriForceNetworkCrowdsale = artifacts.require('./helpers/MockTriForceNetworkCrowdsale.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
+const Whitelist = artifacts.require('./crowdsale/WhiteList.sol');
 const Token = artifacts.require('./triForceNetwork/Force.sol');
 const ERC223Receiver = artifacts.require('./helpers/ERC223ReceiverMock.sol');
 const DataCentre = artifacts.require('./token/DataCentre.sol');
@@ -370,35 +371,37 @@ contract('Token', (accounts) => {
 
 
   describe('#upgradability', () => {
+    let controlCentre;
     let multisigWallet;
     let token;
+    let whitelist;
     let startTime;
     let endTime;
-    let rate
+    let rate;
     let softCap;
-    let hardCap;
     let tokenCap;
     let triForceCrowdsale;
 
     beforeEach(async () => {
       await advanceBlock();
       startTime = latestTime();
-      endTime = startTime + 86400 * 5;
+      endTime = startTime + 86400*5;
       rate = 15000;
       softCap = 1600e18;
-      hardCap = 4800e18;
       tokenCap = 1500000000e18;
 
       token = await Token.new();
+      whitelist = await Whitelist.new();
+      await whitelist.addWhiteListed(accounts[4]);
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, hardCap, softCap);
+      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
       await token.transferOwnership(triForceCrowdsale.address);
       await triForceCrowdsale.unpause();
     });
 
     it('should allow to upgrade token contract manually', async () => {
 
-      const swapRate = new BigNumber(rate);
+      const swapRate = new BigNumber(rate * 1.25);
       const INVESTOR = accounts[4];
       const BENEFICIARY = accounts[5];
       // buy tokens

@@ -29,36 +29,37 @@ contract('FinalizableCrowdsale', function ([_, owner, wallet, thirdparty]) {
     this.startTime = latestTime() + duration.weeks(1)
     this.endTime = this.startTime + 86400*5;
     this.rate = 15000;
+    this.tokenCap = 1500000000e18;
     this.multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     this.token = await Token.new();
-    this.crowdsale = await FinalizableCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, {from: owner})
+    this.crowdsale = await FinalizableCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, this.tokenCap, {from: owner})
     await this.token.transferOwnership(this.crowdsale.address);
 
   })
 
   it('cannot be finalized before ending', async function () {
-    await this.crowdsale.finalize({from: owner}).should.be.rejectedWith(EVMThrow)
+    await this.crowdsale.finalize(owner, {from: owner}).should.be.rejectedWith(EVMThrow)
   })
 
   it('cannot be finalized by third party after ending', async function () {
     await increaseTimeTo(this.endTime + 1)
-    await this.crowdsale.finalize({from: thirdparty}).should.be.rejectedWith(EVMThrow)
+    await this.crowdsale.finalize(owner, {from: thirdparty}).should.be.rejectedWith(EVMThrow)
   })
 
   it('can be finalized by owner after ending', async function () {
     await increaseTimeTo(this.endTime + 1)
-    await this.crowdsale.finalize({from: owner}).should.be.fulfilled
+    await this.crowdsale.finalize(owner, {from: owner}).should.be.fulfilled
   })
 
   it('cannot be finalized twice', async function () {
     await increaseTimeTo(this.endTime + 1)
-    await this.crowdsale.finalize({from: owner})
-    await this.crowdsale.finalize({from: owner}).should.be.rejectedWith(EVMThrow)
+    await this.crowdsale.finalize(owner, {from: owner})
+    await this.crowdsale.finalize(owner, {from: owner}).should.be.rejectedWith(EVMThrow)
   })
 
   it('logs finalized', async function () {
     await increaseTimeTo(this.endTime + 1)
-    const {logs} = await this.crowdsale.finalize({from: owner})
+    const {logs} = await this.crowdsale.finalize(owner, {from: owner})
     const event = logs.find(e => e.event === 'Finalized')
     should.exist(event)
   })

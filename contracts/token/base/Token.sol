@@ -8,7 +8,7 @@ import './SimpleControl.sol';
  */
 contract Token is SimpleControl {
 
-  uint256 public constant INITIAL_SUPPLY = 28350000 * 1e18;
+  uint256 public constant INITIAL_SUPPLY = 2500000 * 1e18;
 
   /**
    * @dev Constructor that gives msg.sender all of existing tokens.

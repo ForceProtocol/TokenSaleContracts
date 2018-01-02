@@ -32,9 +32,10 @@ contract('RefundableCrowdsale', function ([_, owner, investor]) {
     this.startTime = latestTime() + duration.weeks(1)
     this.endTime = this.startTime + 86400*5;
     this.rate = 15000;
+    this.tokenCap = 1500000000e18;
     this.multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     this.token = await Token.new();
-    this.crowdsale = await RefundableCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, goal, {from: owner})
+    this.crowdsale = await RefundableCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, this.tokenCap, goal, {from: owner})
     await this.token.transferOwnership(this.crowdsale.address);
   })
 
@@ -56,7 +57,7 @@ contract('RefundableCrowdsale', function ([_, owner, investor]) {
     await increaseTimeTo(this.startTime)
     await this.crowdsale.sendTransaction({value: goal, from: investor})
     await increaseTimeTo(this.endTime + 1)
-    await this.crowdsale.finalize({from: owner})
+    await this.crowdsale.finalize(owner, {from: owner})
     await this.crowdsale.claimRefund({from: investor}).should.be.rejectedWith(EVMThrow)
   })
 
@@ -65,7 +66,7 @@ contract('RefundableCrowdsale', function ([_, owner, investor]) {
     await this.crowdsale.sendTransaction({value: lessThanGoal, from: investor})
     await increaseTimeTo(this.endTime + 1)
 
-    await this.crowdsale.finalize({from: owner})
+    await this.crowdsale.finalize(owner, {from: owner})
 
     const pre = web3.eth.getBalance(investor)
     await this.crowdsale.claimRefund({from: investor, gasPrice: 0})
@@ -81,7 +82,7 @@ contract('RefundableCrowdsale', function ([_, owner, investor]) {
     await increaseTimeTo(this.endTime + 1)
 
     const pre = web3.eth.getBalance(this.multisigWallet.address)
-    await this.crowdsale.finalize({from: owner})
+    await this.crowdsale.finalize(owner, {from: owner})
     const post = web3.eth.getBalance(this.multisigWallet.address)
 
     post.minus(pre).should.be.bignumber.equal(goal)

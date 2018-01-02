@@ -1,5 +1,6 @@
 const MockTriForceNetworkCrowdsale = artifacts.require('./helpers/MockTriForceNetworkCrowdsale.sol');
 const Token = artifacts.require('./helpers/MockPausedToken.sol');
+const Whitelist = artifacts.require('./crowdsale/WhiteList.sol');
 const DataCentre = artifacts.require('./token/DataCentre.sol');
 const ControlCentre = artifacts.require('./controlCentre/ControlCentre.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
@@ -17,11 +18,11 @@ contract('ControlCentre', (accounts) => {
   let multisigWallet;
   let controlCentre;
   let token;
+  let whitelist;
   let startTime;
   let endTime;
   let rate;
   let softCap;
-  let hardCap;
   let tokenCap;
   let triForceCrowdsale;
 
@@ -33,12 +34,12 @@ contract('ControlCentre', (accounts) => {
     endTime = startTime + 86400*5;
     rate = 15000;
     softCap = 1600e18;
-    hardCap = 4800e18;
     tokenCap = 1500000000e18;
 
     token = await Token.new();
+    whitelist = await Whitelist.new();
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, hardCap, softCap);
+    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
     await token.transferOwnership(triForceCrowdsale.address);
     await triForceCrowdsale.unpause();
     await triForceCrowdsale.diluteCaps();
