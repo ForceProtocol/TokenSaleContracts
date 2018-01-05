@@ -419,4 +419,65 @@ contract('TriForceCrowdsale', (accounts) => {
     assert.equal(vaultBalanceAfter.sub(vaultBalanceBefore).toNumber(), 0, 'ether not deposited into the wallet');
     assert.equal(tokensBalanceAfter.sub(tokensBalanceBefore).toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
   });
-})
+
+  it('shound not be finalized before ending', async function () {
+    try {
+      await triForceCrowdsale.finalize(accounts[0]);
+    } catch(error) {
+      assertJump(error);
+    }
+  })
+
+  it('shound not be finalized by third party after ending', async function () {
+    await increaseTime(endTime - startTime + 1)
+    const thirdparty = accounts[3];
+    try {
+      await triForceCrowdsale.finalize(accounts[0], {from: thirdparty});
+    } catch(error) {
+      assertJump(error);
+    }
+  })
+
+  it('should enable refunds after endTime if goal not reached', async function () {
+    const INVESTOR = accounts[4];
+    const thirdparty = accounts[3];
+    const balanceBefore = await web3.eth.getBalance(INVESTOR);
+    await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR, gasPrice: 0});
+
+    await increaseTime(endTime - startTime + 1)
+    await triForceCrowdsale.finalize(accounts[0], {from: accounts[0]});
+
+    await triForceCrowdsale.claimRefund({from: INVESTOR, gasPrice: 0});
+    const balanceAfter = await web3.eth.getBalance(INVESTOR);
+    assert.equal(balanceAfter.toNumber(), balanceBefore.toNumber());
+  })
+
+  it('should send founder shares during finalize after endTime if goal reached', async function () {
+    const INVESTOR = accounts[4];
+    const thirdparty = accounts[3];
+    const balanceBefore = await token.balanceOf.call(accounts[0]);
+    const amountEth = (await triForceCrowdsale.goal.call()).toNumber();
+
+    await triForceCrowdsale.buyTokens(INVESTOR, {value: amountEth, from: INVESTOR, gasPrice: 0});
+
+    const investorShares = amountEth * rate * 1.25;
+
+    assert.equal(investorShares, (await triForceCrowdsale.totalSupply()).toNumber())
+    const founderShares = investorShares / 3;
+    await increaseTime(endTime - startTime + 1);
+    await triForceCrowdsale.finalize(accounts[0], {from: accounts[0]});
+
+    const balanceAfter = await token.balanceOf.call(accounts[0]);
+    assert.equal(balanceAfter.sub(balanceBefore).toNumber(), founderShares);
+  })
+
+  it('cannot be finalized twice', async function () {
+    await increaseTime(endTime - startTime + 1)
+    await triForceCrowdsale.finalize(accounts[0], {from: accounts[0]})
+      try {
+        await triForceCrowdsale.finalize(accounts[0], {from: accounts[0]});
+      } catch(error) {
+        assertJump(error);
+      }
+    })
+});

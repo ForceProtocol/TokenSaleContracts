@@ -47,4 +47,9 @@ contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale, 
     uint256 tokens = _buyTokens(beneficiary, rate.div(100).mul(bonusFactor()));
     if(!setSupply(totalSupply.add(tokens))) revert();
   }
+
+  // fallback function can be used to buy tokens
+  function () external payable {
+    buyTokens(msg.sender);
+  }
 }

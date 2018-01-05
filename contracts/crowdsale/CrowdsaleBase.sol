@@ -35,11 +35,6 @@ contract CrowdsaleBase {
     return now > endTime;
   }
 
-  // fallback function can be used to buy tokens
-  function () external payable {
-    buyTokens(msg.sender);
-  }
-
   // send ether to the fund collection wallet
   // override to create custom fund forwarding mechanisms
   function forwardFunds() internal {
@@ -49,8 +44,8 @@ contract CrowdsaleBase {
   // @return true if the transaction can buy tokens
   function validPurchase() internal constant returns (bool) {
     bool withinPeriod = now >= startTime && now <= endTime;
-    bool nonZeroPurchase = msg.value != 0;
-    return withinPeriod && nonZeroPurchase;
+    bool minPurchase = msg.value >= 1e17;
+    return withinPeriod && minPurchase;
   }
 
   // low level token purchase function

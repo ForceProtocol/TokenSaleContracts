@@ -27,6 +27,14 @@ contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
     // diluting all caps by 10^6 for testing
     goal = goal.div(1e6);
     tokenCap = tokenCap.div(1e6);
+
+  }
+
+  // @return true if the transaction can buy tokens
+  function validPurchase() internal constant returns (bool) {
+    bool withinPeriod = now >= startTime && now <= endTime;
+    bool minPurchase = msg.value >= 1e11;
+    return withinPeriod && minPurchase;
   }
 
   // diluting all rate thresholds by 10^6 for testing
