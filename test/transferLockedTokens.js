@@ -1,46 +1,82 @@
-import {advanceBlock} from './helpers/advanceToBlock'
-import {increaseTimeTo, duration} from './helpers/increaseTime'
-import latestTime from './helpers/latestTime'
-import EVMThrow from './helpers/EVMThrow'
-import mockEther from './helpers/mockEther'
+const Controller = artifacts.require('./helpers/MockTransferLockedTokenControl.sol');
+const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
+const Token = artifacts.require('./token/Token.sol');
+const ERC223Receiver = artifacts.require('./helpers/ERC223ReceiverMock.sol');
+const DataCentre = artifacts.require('./token/DataCentre.sol');
+import {advanceBlock} from './helpers/advanceToBlock';
+import latestTime from './helpers/latestTime';
+import increaseTime from './helpers/increaseTime';
+const BigNumber = require('bignumber.js');
+const assertJump = require('./helpers/assertJump');
+const ONE_ETH = web3.toWei(1, 'ether');
+const MOCK_ONE_ETH = web3.toWei(0.000001, 'ether'); // diluted ether value for testing
 
-const BigNumber = web3.BigNumber
+contract('Token', (accounts) => {
+  let token;
+  let dataCentre;
+  let controller;
+  const FOUNDERS = [accounts[0], accounts[1], accounts[2]];
 
-const should = require('chai')
-  .use(require('chai-as-promised'))
-  .use(require('chai-bignumber')(BigNumber))
-  .should()
+  beforeEach(async () => {
+    await advanceBlock();
+    const startTime = latestTime();
+    token = await Token.new();
+    controller = await Controller.new(token.address, '0x00')
+    await token.transferOwnership(controller.address);
+    await controller.unpause();
+  });
 
-const Token = artifacts.require('./helpers/MockTransferLockedToken.sol')
-const tokens = mockEther(42).mul(100);
+  // only needed because of the refactor
+  describe('#transfer', () => {
+    it('should allow investors to transfer only after minting finished', async () => {
 
-contract('TransferLockedTokens', function ([_, owner, wallet, thirdparty]) {
+      await controller.finishMinting();
 
-  before(async function() {
-    //Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
-    await advanceBlock()
-  })
+      const INVESTOR = accounts[0];
+      const BENEFICIARY = accounts[5];
+      const swapRate = new BigNumber(256);
+      const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
 
-  beforeEach(async function () {
-    this.token = await Token.new();
-  })
+      await token.transfer(BENEFICIARY, tokensAmount, {from: INVESTOR});
+      const tokenBalanceTransfered = await token.balanceOf.call(BENEFICIARY);
+      assert.equal(tokensAmount.toNumber(), tokenBalanceTransfered.toNumber(), 'tokens not transferred');
+    });
 
-  it('should allow tranfer only when minting finished', async function () {
-    await this.token.finishMinting().should.be.fulfilled;
-    await this.token.transfer(thirdparty, tokens).should.be.fulfilled;
-  })
+    it('should allow investors to transfer only after minting finished', async () => {
 
-  it('should allow approve and transferFrom only when minting finished', async function () {
-    await this.token.finishMinting().should.be.fulfilled;
-    await this.token.approve(thirdparty, tokens).should.be.fulfilled;
-    await this.token.transferFrom(_, thirdparty, tokens).should.be.fulfilled;
-  })
+      const INVESTOR = accounts[0];
+      const BENEFICIARY = accounts[5];
+      const swapRate = new BigNumber(256);
+      const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
 
-  it('should not allow tranfer only when minting in progress', async function () {
-    await this.token.transfer(thirdparty, tokens).should.be.rejectedWith(EVMThrow);
-  })
+      try {
+        await token.transfer(BENEFICIARY, tokensAmount, {from: INVESTOR});
+      } catch (error) {
+        assertJump(error);
+      }
+      const tokenBalanceTransfered = await token.balanceOf.call(BENEFICIARY);
+      assert.equal(0, tokenBalanceTransfered.toNumber(), 'tokens not transferred');
+    });
+  });
 
-  it('should not allow approve and transferFrom only when minting in progress', async function () {
-    await this.token.approve(thirdparty, tokens).should.be.rejectedWith(EVMThrow);
-  })
+  describe('#transferFrom', () => {
+    it('should allow investors to approve and transferFrom only after minting finished', async () => {
+
+      await controller.finishMinting();
+
+      const INVESTOR = accounts[0];
+      const BENEFICIARY = accounts[5];
+      const swapRate = new BigNumber(256);
+      const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
+
+      await token.approve(BENEFICIARY, tokensAmount, {from: INVESTOR});
+
+      const tokenBalanceAllowed = await token.allowance.call(INVESTOR, BENEFICIARY);
+      assert.equal(tokenBalanceAllowed.toNumber(), tokensAmount.toNumber(), 'tokens not allowed');
+
+      await token.transferFrom(INVESTOR, BENEFICIARY, tokensAmount, {from: BENEFICIARY});
+      const tokenBalanceTransfered = await token.balanceOf.call(BENEFICIARY);
+      assert.equal(tokensAmount.toNumber(), tokenBalanceTransfered.toNumber(), 'tokens not transferred');
+    });
+  });
 })

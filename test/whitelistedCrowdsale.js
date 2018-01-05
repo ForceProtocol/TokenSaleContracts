@@ -11,9 +11,10 @@ const should = require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should()
 
+const Controller = artifacts.require('./controller/Controller.sol');
 const WhiteListedCrowdsale = artifacts.require('./helpers/WhiteListedCrowdsaleImpl.sol')
 const WhiteList = artifacts.require('./crowdsale/WhiteList.sol')
-const Token = artifacts.require('./helpers/MockPausedToken.sol')
+const Token = artifacts.require('./token/Token.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol')
 
 contract('WhiteListedCrowdsale', function ([_, owner, wallet, thirdparty]) {
@@ -31,12 +32,15 @@ contract('WhiteListedCrowdsale', function ([_, owner, wallet, thirdparty]) {
   beforeEach(async function () {
     this.startTime = latestTime()
     this.endTime = this.startTime + 86400*5;
-    this.rate = 15000;
+    this.rate = 500;
     this.multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     this.token = await Token.new();
     this.list = await WhiteList.new({from: owner})
-    this.crowdsale = await WhiteListedCrowdsale.new(this.startTime, this.endTime, this.rate, this.token.address, this.multisigWallet.address, this.list.address, {from: owner})
-    await this.token.transferOwnership(this.crowdsale.address);
+    this.controller = await Controller.new(this.token.address, '0x00')
+    this.crowdsale = await WhiteListedCrowdsale.new(this.startTime, this.endTime, this.rate, this.multisigWallet.address, this.controller.address, this.list.address, {from: owner})
+    await this.controller.addAdmin(this.crowdsale.address);
+    await this.token.transferOwnership(this.controller.address);
+    await this.controller.unpause();
 
   })
 

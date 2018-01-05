@@ -6,8 +6,9 @@ import '../../contracts/crowdsale/FinalizableCrowdsale.sol';
 
 contract FinalizableCrowdsaleImpl is FinalizableCrowdsale {
 
-  function FinalizableCrowdsaleImpl (uint256 _startTime, uint256 _endTime, uint256 _rate,  address _wallet, address controller) public
+  function FinalizableCrowdsaleImpl (uint256 _startTime, uint256 _endTime, uint256 _rate,  address _wallet, address controller, uint256 _cap) public
     Crowdsale(_startTime, _endTime, _rate, _wallet, controller)
+    TokenCappedCrowdsale(_cap)
     FinalizableCrowdsale()
   {
   }

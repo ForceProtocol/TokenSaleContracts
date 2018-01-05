@@ -1,8 +1,8 @@
 const MockTriForceNetworkCrowdsale = artifacts.require('./helpers/MockTriForceNetworkCrowdsale.sol');
+const Controller = artifacts.require('./controller/Controller.sol');
 const TriForceNetworkCrowdsale = artifacts.require('./triForceNetwork/TriForceNetworkCrowdsale.sol');
 const Token = artifacts.require('./triForceNetwork/Force.sol');
 const DataCentre = artifacts.require('./token/DataCentre.sol');
-const ControlCentre = artifacts.require('./controlCentre/ControlCentre.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
 const Whitelist = artifacts.require('./crowdsale/WhiteList.sol');
 import {advanceBlock} from './helpers/advanceToBlock';
@@ -17,20 +17,19 @@ const FOUNDERS = [web3.eth.accounts[1], web3.eth.accounts[2], web3.eth.accounts[
 
 contract('TriForceCrowdsale', (accounts) => {
   let multisigWallet;
-  let controlCentre;
   let token;
   let whitelist;
   let startTime;
   let endTime;
   let rate;
   let softCap;
+  let controller;
   let tokenCap;
   let triForceCrowdsale;
 
   beforeEach(async () => {
     await advanceBlock();
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-    controlCentre = await ControlCentre.new();
     startTime = latestTime();
     endTime = startTime + 86400*5;
     rate = 15000;
@@ -41,9 +40,11 @@ contract('TriForceCrowdsale', (accounts) => {
     whitelist = await Whitelist.new();
     await whitelist.addWhiteListed(accounts[4]);
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
+    controller = await Controller.new(token.address, '0x00')
     triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
-    await token.transferOwnership(triForceCrowdsale.address);
-    await triForceCrowdsale.unpause();
+    await controller.addAdmin(triForceCrowdsale.address);
+    await token.transferOwnership(controller.address);
+    await controller.unpause();
     await triForceCrowdsale.diluteCaps();
   });
 
@@ -51,7 +52,6 @@ contract('TriForceCrowdsale', (accounts) => {
     beforeEach(async () => {
       await advanceBlock();
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      controlCentre = await ControlCentre.new();
       startTime = latestTime();
       endTime = startTime + 86400*5;
       rate = 15000;
