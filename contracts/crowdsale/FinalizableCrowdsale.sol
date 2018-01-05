@@ -35,6 +35,6 @@ contract FinalizableCrowdsale is TokenCappedCrowdsale, Ownable {
    */
   function finalization(address _beneficiary) internal {
     uint256 founderShares = totalSupply.div(3);
-    Token(tokenAddr).mint(_beneficiary, founderShares);
+    ControllerInterface(controller).mint(_beneficiary, founderShares);
   }
 }

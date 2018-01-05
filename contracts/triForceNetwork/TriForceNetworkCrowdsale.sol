@@ -2,22 +2,20 @@ pragma solidity ^0.4.11;
 
 import "../crowdsale/singlestage/TokenCappedCrowdsale.sol";
 import "../crowdsale/RefundableCrowdsale.sol";
-import "../crowdsale/PausableCrowdsale.sol";
 import "../crowdsale/WhiteListedCrowdsale.sol";
 
 
 /**
  * @title TriForceNetworkCrowdsale
  */
-contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale, PausableCrowdsale, WhiteListedCrowdsale {
+contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale,  WhiteListedCrowdsale {
 
 
-  function TriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _tokenAddr, address _wallet, uint256 _tokenCap, uint256 _softCap, address _whitelist)
-    Crowdsale(_startTime, _endTime, _rate, _tokenAddr, _wallet)
+  function TriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address controller, uint256 _tokenCap, uint256 _softCap, address _whitelist)
+    Crowdsale(_startTime, _endTime, _rate, _wallet, controller)
     TokenCappedCrowdsale(_tokenCap)
     RefundableCrowdsale(_softCap)
     WhiteListedCrowdsale(_whitelist)
-    PausableCrowdsale()
   {
 
   }
@@ -46,7 +44,7 @@ contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale, 
   }
 
   // low level token purchase function
-  function buyTokens(address beneficiary) public whenNotPaused onlyWhiteListed(beneficiary) payable {
+  function buyTokens(address beneficiary) public onlyWhiteListed(beneficiary) payable {
     uint256 tokens = _buyTokens(beneficiary, rate.add(rate.mul(bonusFactor()).div(100)));
     if(!setSupply(totalSupply.add(tokens))) revert();
   }
