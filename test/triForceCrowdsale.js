@@ -39,9 +39,10 @@ contract('TriForceCrowdsale', (accounts) => {
     token = await Token.new();
     whitelist = await Whitelist.new();
     await whitelist.addWhiteListed(accounts[4]);
+    await whitelist.addWhiteListed(accounts[5]);
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     controller = await Controller.new(token.address, '0x00')
-    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
+    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
     await controller.addAdmin(triForceCrowdsale.address);
     await token.transferOwnership(controller.address);
     await controller.unpause();
@@ -51,20 +52,9 @@ contract('TriForceCrowdsale', (accounts) => {
   describe('#triForceCrowdsaleDetails', () => {
     beforeEach(async () => {
       await advanceBlock();
-      multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      startTime = latestTime();
-      endTime = startTime + 86400*5;
-      rate = 15000;
-      softCap = 1600e18;
-      tokenCap = 1500000000e18;
-
-      token = await Token.new();
-      whitelist = await Whitelist.new();
-      await whitelist.addWhiteListed(accounts[4]);
-      multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
-      await token.transferOwnership(triForceCrowdsale.address);
-      await triForceCrowdsale.unpause();
+      await controller.removeAdmin(triForceCrowdsale.address);
+      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
+      await controller.addAdmin(triForceCrowdsale.address);
     });
 
     it('should allow start triForceCrowdsale properly', async () => {
@@ -77,9 +67,9 @@ contract('TriForceCrowdsale', (accounts) => {
     assert.equal(2500000e18, initialBalance.toNumber(), 'initialBalance for sale NOT distributed properly');
 
     //checking token and wallet address
-    const tokenAddress = await triForceCrowdsale.tokenAddr.call();
+    const controllerAddress = await triForceCrowdsale.controller.call();
     const walletAddress = await triForceCrowdsale.wallet.call();
-    assert.equal(tokenAddress, token.address, 'address for token in contract not set');
+    assert.equal(controllerAddress, controller.address, 'address for token in contract not set');
     assert.equal(walletAddress, multisigWallet.address, 'address for multisig wallet in contract not set');
 
     //list rate and check
@@ -135,22 +125,57 @@ contract('TriForceCrowdsale', (accounts) => {
 
 
   describe('#purchase', () => {
-    beforeEach(async () => {
-      await whitelist.addWhiteListed(accounts[5]);
+
+    it('should not allow investors to buy tokens for less that 0.1 eth', async () => {
+      const INVESTOR = accounts[4];
+
+      // buy tokens
+      try {
+        await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH / 10 - 1, from: INVESTOR});
+      } catch(error) {
+        assertJump(error);
+      }
+
+      const vaultAddr = await triForceCrowdsale.vault.call();
+      const vaultBalance = await web3.eth.getBalance(vaultAddr);
+      const tokensBalance = await token.balanceOf.call(INVESTOR);
+
+      assert.equal(vaultBalance.toNumber(), 0, 'ether not deposited into the wallet');
+      assert.equal(tokensBalance.toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
+    });
+
+    it('should not allow non-whitelisted investors to buy tokens', async () => {
+      const NW_INVESTOR = accounts[6];
+
+      // buy tokens
+      try {
+        await triForceCrowdsale.buyTokens(NW_INVESTOR, {value: MOCK_ONE_ETH, from: NW_INVESTOR});
+      } catch(error) {
+        assertJump(error);
+      }
+
+      const vaultAddr = await triForceCrowdsale.vault.call();
+      const vaultBalance = await web3.eth.getBalance(vaultAddr);
+      const tokensBalance = await token.balanceOf.call(NW_INVESTOR);
+
+      assert.equal(vaultBalance.toNumber(), 0, 'ether not deposited into the wallet');
+      assert.equal(tokensBalance.toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
     });
 
     it('should allow investors to buy tokens with token bonus of 25%', async () => {
       const INVESTOR = accounts[4];
+      const totalSupplyBefore = await token.totalSupply.call();
 
       // buy tokens
       await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR});
       const vaultAddr = await triForceCrowdsale.vault.call();
       const vaultBalance = await web3.eth.getBalance(vaultAddr);
       const tokensBalance = await token.balanceOf.call(INVESTOR);
-
+      const totalSupplyAfter = await token.totalSupply.call();
       const tokensAmount = new BigNumber(MOCK_ONE_ETH).mul(rate * 1.25);
       assert.equal(vaultBalance.toNumber(), MOCK_ONE_ETH, 'ether not deposited into the wallet');
       assert.equal(tokensBalance.toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
+      assert.equal(totalSupplyAfter.sub(totalSupplyBefore).toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
     });
 
     it('should allow investors to buy tokens with token bonus of 20%', async () => {
@@ -355,49 +380,6 @@ contract('TriForceCrowdsale', (accounts) => {
     });
   });
 
-  it('should allow to setContracts in TriForceCrowdsale manually', async () => {
-    await triForceCrowdsale.pause();
-
-    const tokenNew = await Token.new();
-    const multisigNew = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-    await triForceCrowdsale.setContracts(tokenNew.address, multisigNew.address);
-    assert.equal(await triForceCrowdsale.tokenAddr(), tokenNew.address, 'token contract not set');
-    assert.equal(await triForceCrowdsale.wallet(), multisigNew.address, 'wallet contract not set');
-  });
-
-  it('should allow to transfer Token Ownership in TriForceCrowdsale manually', async () => {
-    await triForceCrowdsale.pause();
-
-    await triForceCrowdsale.transferTokenOwnership(multisigWallet.address);
-    assert.equal(await token.owner(), multisigWallet.address, 'ownership not transferred');
-  });
-
-  it('should not allow to add and remove admins', async () => {
-
-    await triForceCrowdsale.addAdmin(accounts[2]);
-    await triForceCrowdsale.addAdmin(accounts[3]);
-
-    assert.equal(await triForceCrowdsale.admins(1), accounts[2], 'governance not added');
-    assert.equal(await triForceCrowdsale.admins(2), accounts[3], 'governance not added');
-
-    await triForceCrowdsale.removeAdmin(accounts[3]);
-    await triForceCrowdsale.removeAdmin(accounts[2]);
-
-    try {
-      await triForceCrowdsale.admins.call(1);
-      assert.fail('should have failed before');
-    } catch(error) {
-      assertJump(error);
-    }
-
-    try {
-      await triForceCrowdsale.admins.call(2);
-      assert.fail('should have failed before');
-    } catch(error) {
-      assertJump(error);
-    }
-  });
-
   it('should allow to buy Token when not Paused', async () => {
     const INVESTOR = accounts[4];
 
@@ -415,38 +397,9 @@ contract('TriForceCrowdsale', (accounts) => {
     assert.equal(tokensBalanceAfter.sub(tokensBalanceBefore).toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
   });
 
-  it('should not allow to setContracts when not paused', async () => {
-
-    const tokenNew = await Token.new();
-    const multisigNew = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-
-    try {
-      await triForceCrowdsale.setContracts(tokenNew.address, multisigNew.address);
-      assert.fail('should have failed before');
-    } catch (error) {
-      assertJump(error);
-    }
-
-    assert.equal(await triForceCrowdsale.tokenAddr(), token.address, 'token contract still set');
-    assert.equal(await triForceCrowdsale.wallet(), multisigWallet.address, 'wallet contract still set');
-  });
-
-  it('should not allow to transfer Token Ownership in TriForceCrowdsale manually', async () => {
-
-    const multisigNew = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-
-    try {
-      await triForceCrowdsale.transferTokenOwnership(multisigNew.address);
-      assert.fail('should have failed before');
-    } catch (error) {
-      assertJump(error);
-    }
-
-    assert.equal(await token.owner(), triForceCrowdsale.address, 'ownership still transferred');
-  });
 
   it('should not allow to buy Token when Paused', async () => {
-    await triForceCrowdsale.pause();
+    await controller.pause();
 
     const INVESTOR = accounts[4];
     const vaultAddr = await triForceCrowdsale.vault.call();

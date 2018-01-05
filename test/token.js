@@ -332,7 +332,7 @@ contract('Token', (accounts) => {
       await whitelist.addWhiteListed(accounts[4]);
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
       controller = await Controller.new(token.address, '0x00')
-      triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
+      triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
       await controller.addAdmin(triForceCrowdsale.address);
       await token.transferOwnership(controller.address);
       await controller.unpause();
@@ -340,9 +340,10 @@ contract('Token', (accounts) => {
 
     it('should allow to upgrade controller contract manually', async () => {
 
-      const swapRate = new BigNumber(rate);
+      const swapRate = new BigNumber(rate * 1.25);
       const INVESTOR = accounts[4];
       const BENEFICIARY = accounts[5];
+
       // buy tokens
       await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR});
       const tokensBalance = await token.balanceOf.call(INVESTOR);
