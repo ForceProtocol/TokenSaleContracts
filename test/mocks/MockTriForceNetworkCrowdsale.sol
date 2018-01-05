@@ -17,8 +17,8 @@ import "../../contracts/triForceNetwork/TriForceNetworkCrowdsale.sol";
 contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
 
 
-  function MockTriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _tokenAddr, address _wallet, uint256 _tokenCap, uint256 _softCap, address _whitelist)
-    TriForceNetworkCrowdsale(_startTime, _endTime, _rate, _tokenAddr, _wallet, _tokenCap, _softCap, _whitelist)
+  function MockTriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address controller, uint256 _tokenCap, uint256 _softCap, address _whitelist)
+    TriForceNetworkCrowdsale(_startTime, _endTime, _rate, _wallet, controller, _tokenCap, _softCap, _whitelist)
   {
 
   }
@@ -34,22 +34,22 @@ contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
     if(now < startTime || now > endTime) return 0;
 
     if(totalSupply < 15000000e12) {
-      return 25;
+      return 125;
     }
     else if(totalSupply < 45000000e12) {
-      return 20;
+      return 120;
     }
     else if(totalSupply < 120000000e12) {
-      return 10;
+      return 110;
     }
     else if(totalSupply < 570000000e12) {
-      return 5;
+      return 105;
     }
     else if(totalSupply < 1170000000e12) {
-      return 3;
+      return 103;
     }
     else {
-      return 0;
+      return 100;
     }
   }
 }

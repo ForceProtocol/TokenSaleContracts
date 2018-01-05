@@ -14,5 +14,5 @@ contract ControllerInterface {
   function approve(address owner, address spender, uint256 value) public returns (bool);
   function transfer(address owner, address to, uint value, bytes data) public returns (bool);
   function transferFrom(address owner, address from, address to, uint256 amount, bytes data) public returns (bool);
-  function mint(address _to, uint256 _amount)  public returns (bool);
+  function mint(address _to, uint256 _amount) public returns (bool);
 }

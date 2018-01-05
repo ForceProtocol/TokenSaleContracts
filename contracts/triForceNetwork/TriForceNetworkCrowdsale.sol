@@ -10,7 +10,6 @@ import "../crowdsale/WhiteListedCrowdsale.sol";
  */
 contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale,  WhiteListedCrowdsale {
 
-
   function TriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address controller, uint256 _tokenCap, uint256 _softCap, address _whitelist)
     Crowdsale(_startTime, _endTime, _rate, _wallet, controller)
     TokenCappedCrowdsale(_tokenCap)
@@ -24,28 +23,28 @@ contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale, 
     if(now < startTime || now > endTime) return 0;
 
     if(totalSupply < 15000000e18) {
-      return 25;
+      return 125;
     }
     else if(totalSupply < 45000000e18) {
-      return 20;
+      return 120;
     }
     else if(totalSupply < 120000000e18) {
-      return 10;
+      return 110;
     }
     else if(totalSupply < 570000000e18) {
-      return 5;
+      return 105;
     }
     else if(totalSupply < 1170000000e18) {
-      return 3;
+      return 103;
     }
     else {
-      return 0;
+      return 100;
     }
   }
 
   // low level token purchase function
   function buyTokens(address beneficiary) public onlyWhiteListed(beneficiary) payable {
-    uint256 tokens = _buyTokens(beneficiary, rate.add(rate.mul(bonusFactor()).div(100)));
+    uint256 tokens = _buyTokens(beneficiary, rate.div(100).mul(bonusFactor()));
     if(!setSupply(totalSupply.add(tokens))) revert();
   }
 }
