@@ -28,24 +28,12 @@ contract CrowdsaleBase {
     wallet = _wallet;
   }
 
-  function buyTokens(address beneficiary) public payable;
-
+  function validPurchase() internal constant returns (bool);
+  function forwardFunds() internal;
+  
   // @return true if crowdsale event has ended
   function hasEnded() public constant returns (bool) {
     return now > endTime;
-  }
-
-  // send ether to the fund collection wallet
-  // override to create custom fund forwarding mechanisms
-  function forwardFunds() internal {
-    require(wallet.call.gas(2000).value(msg.value)());
-  }
-
-  // @return true if the transaction can buy tokens
-  function validPurchase() internal constant returns (bool) {
-    bool withinPeriod = now >= startTime && now <= endTime;
-    bool minPurchase = msg.value >= 1e17;
-    return withinPeriod && minPurchase;
   }
 
   // low level token purchase function

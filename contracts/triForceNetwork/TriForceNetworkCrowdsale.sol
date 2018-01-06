@@ -42,6 +42,13 @@ contract TriForceNetworkCrowdsale is TokenCappedCrowdsale, RefundableCrowdsale, 
     }
   }
 
+  // @return true if the transaction can buy tokens
+  function validPurchase() internal constant returns (bool) {
+    bool withinPeriod = now >= startTime && now <= endTime;
+    bool minPurchase = msg.value >= 1e17;
+    return withinPeriod && minPurchase;
+  }
+
   // low level token purchase function
   function buyTokens(address beneficiary) public onlyWhiteListed(beneficiary) payable {
     uint256 tokens = _buyTokens(beneficiary, rate.div(100).mul(bonusFactor()));

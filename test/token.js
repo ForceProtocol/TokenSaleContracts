@@ -25,9 +25,12 @@ contract('Token', (accounts) => {
     await advanceBlock();
     const startTime = latestTime();
     token = await Token.new();
-    controller = await Controller.new(token.address, '0x00')
+    dataCentre = await DataCentre.new();
+    controller = await Controller.new(token.address, dataCentre.address)
     await token.transferOwnership(controller.address);
+    await dataCentre.transferOwnership(controller.address);
     await controller.unpause();
+    await controller.mint(accounts[0], 2500000e18);
   });
 
   // only needed because of the refactor
@@ -310,6 +313,7 @@ contract('Token', (accounts) => {
   describe('#upgradability', () => {
     let multisigWallet;
     let token;
+    let dataCentre;
     let whitelist;
     let startTime;
     let endTime;
@@ -328,14 +332,17 @@ contract('Token', (accounts) => {
       tokenCap = 1500000000e18;
 
       token = await Token.new();
+      dataCentre = await DataCentre.new();
       whitelist = await Whitelist.new();
       await whitelist.addWhiteListed(accounts[4]);
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-      controller = await Controller.new(token.address, '0x00')
+      controller = await Controller.new(token.address, dataCentre.address)
       triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
       await controller.addAdmin(triForceCrowdsale.address);
       await token.transferOwnership(controller.address);
+      await dataCentre.transferOwnership(controller.address);
       await controller.unpause();
+      await controller.mint(accounts[0], 2500000e18);
     });
 
     it('should allow to upgrade controller contract manually', async () => {

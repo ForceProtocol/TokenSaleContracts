@@ -1,4 +1,4 @@
-const Controller = artifacts.require('./helpers/MockTransferLockedTokenControl.sol');
+const Controller = artifacts.require('./triForceNetwork/TriController.sol');
 const MultisigWallet = artifacts.require('./multisig/solidity/MultiSigWalletWithDailyLimit.sol');
 const Token = artifacts.require('./token/Token.sol');
 const ERC223Receiver = artifacts.require('./helpers/ERC223ReceiverMock.sol');
@@ -21,9 +21,12 @@ contract('Token', (accounts) => {
     await advanceBlock();
     const startTime = latestTime();
     token = await Token.new();
-    controller = await Controller.new(token.address, '0x00')
+    dataCentre = await DataCentre.new();
+    controller = await Controller.new(token.address, dataCentre.address)
     await token.transferOwnership(controller.address);
+    await dataCentre.transferOwnership(controller.address);
     await controller.unpause();
+    await controller.mint(accounts[0], 2500000e18);
   });
 
   // only needed because of the refactor

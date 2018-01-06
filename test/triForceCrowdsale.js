@@ -1,5 +1,5 @@
 const MockTriForceNetworkCrowdsale = artifacts.require('./helpers/MockTriForceNetworkCrowdsale.sol');
-const Controller = artifacts.require('./controller/Controller.sol');
+const Controller = artifacts.require('./triForceNetwork/TriController.sol');
 const TriForceNetworkCrowdsale = artifacts.require('./triForceNetwork/TriForceNetworkCrowdsale.sol');
 const Token = artifacts.require('./triForceNetwork/Force.sol');
 const DataCentre = artifacts.require('./token/DataCentre.sol');
@@ -18,6 +18,7 @@ const FOUNDERS = [web3.eth.accounts[1], web3.eth.accounts[2], web3.eth.accounts[
 contract('TriForceCrowdsale', (accounts) => {
   let multisigWallet;
   let token;
+  let dataCentre;
   let whitelist;
   let startTime;
   let endTime;
@@ -37,15 +38,18 @@ contract('TriForceCrowdsale', (accounts) => {
     tokenCap = 1500000000e18;
 
     token = await Token.new();
+    dataCentre = await DataCentre.new();
     whitelist = await Whitelist.new();
     await whitelist.addWhiteListed(accounts[4]);
     await whitelist.addWhiteListed(accounts[5]);
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
-    controller = await Controller.new(token.address, '0x00')
+    controller = await Controller.new(token.address, dataCentre.address)
     triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
     await controller.addAdmin(triForceCrowdsale.address);
     await token.transferOwnership(controller.address);
+    await dataCentre.transferOwnership(controller.address);
     await controller.unpause();
+    await controller.mint(accounts[0], 2500000e18);
     await triForceCrowdsale.diluteCaps();
   });
 

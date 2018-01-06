@@ -34,7 +34,7 @@ contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
   function validPurchase() internal constant returns (bool) {
     bool withinPeriod = now >= startTime && now <= endTime;
     bool minPurchase = msg.value >= 1e11;
-    return withinPeriod && minPurchase;
+    return super.validPurchase() || (withinPeriod && minPurchase);
   }
 
   // diluting all rate thresholds by 10^6 for testing
