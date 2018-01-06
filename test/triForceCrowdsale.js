@@ -25,7 +25,6 @@ contract('TriForceCrowdsale', (accounts) => {
   let rate;
   let softCap;
   let controller;
-  let tokenCap;
   let triForceCrowdsale;
 
   beforeEach(async () => {
@@ -35,7 +34,6 @@ contract('TriForceCrowdsale', (accounts) => {
     endTime = startTime + 86400*5;
     rate = 15000;
     softCap = 1600e18;
-    tokenCap = 1500000000e18;
 
     token = await Token.new();
     dataCentre = await DataCentre.new();
@@ -44,7 +42,7 @@ contract('TriForceCrowdsale', (accounts) => {
     await whitelist.addWhiteListed(accounts[5]);
     multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
     controller = await Controller.new(token.address, dataCentre.address)
-    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
+    triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, softCap, whitelist.address);
     await controller.addAdmin(triForceCrowdsale.address);
     await token.transferOwnership(controller.address);
     await dataCentre.transferOwnership(controller.address);
@@ -57,7 +55,7 @@ contract('TriForceCrowdsale', (accounts) => {
     beforeEach(async () => {
       await advanceBlock();
       await controller.removeAdmin(triForceCrowdsale.address);
-      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
+      triForceCrowdsale = await TriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, softCap, whitelist.address);
       await controller.addAdmin(triForceCrowdsale.address);
     });
 
@@ -79,9 +77,7 @@ contract('TriForceCrowdsale', (accounts) => {
     //list rate and check
     const rate = await triForceCrowdsale.rate.call();
     const endTime = await triForceCrowdsale.endTime.call();
-    const tokenCapSet = await triForceCrowdsale.tokenCap.call();
 
-    assert.equal(tokenCapSet.toNumber(), tokenCap, 'tokenCap not set');
     assert.equal(endTime.toNumber(), endTime, 'endTime not set right');
     assert.equal(rate.toNumber(), rate, 'rate not set right');
     });
@@ -93,7 +89,7 @@ contract('TriForceCrowdsale', (accounts) => {
       let triForceCrowdsaleNew;
       endTime = startTime - 1;
       try {
-        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
+        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, token.address, multisigWallet.address, softCap, whitelist.address);
         assert.fail('should have failed before');
       } catch(error) {
         assertJump(error);
@@ -105,7 +101,7 @@ contract('TriForceCrowdsale', (accounts) => {
     it('should not allow to start triForceCrowdsale due to ZERO rate',  async () => {
       let triForceCrowdsaleNew;
       try {
-        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, 0, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
+        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, 0, token.address, multisigWallet.address, softCap, whitelist.address);
         assert.fail('should have failed before');
       } catch(error) {
         assertJump(error);
@@ -117,7 +113,7 @@ contract('TriForceCrowdsale', (accounts) => {
     it('should not allow to start triForceCrowdsale if cap is zero',  async () => {
       let triForceCrowdsaleNew;
       try {
-        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, 0, token.address, multisigWallet.address, tokenCap, softCap, whitelist.address);
+        triForceCrowdsaleNew = await MockTriForceNetworkCrowdsale.new(startTime, endTime, 0, token.address, multisigWallet.address, softCap, whitelist.address);
         assert.fail('should have failed before');
       } catch(error) {
         assertJump(error);
@@ -310,78 +306,6 @@ contract('TriForceCrowdsale', (accounts) => {
       assert.equal(vaultBalance.toNumber(), 0, 'ether not deposited into the wallet');
       assert.equal(tokensBalance.toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
     }
-  });
-
-
-  describe('#purchaseBelowCaps', () => {
-
-    it('should allow investors to buy tokens just below tokenCap in the 1st phase', async () => {
-      const INVESTORS = accounts[4];
-      const amountEth1 = new BigNumber(1500000000).div(rate).div(1.25).toNumber() - 1;
-      let amountEth = amountEth1
-      amountEth = amountEth * MOCK_ONE_ETH;
-
-      const tokensAmount = amountEth * rate * 1.25;
-      //  buy tokens
-      await triForceCrowdsale.buyTokens(INVESTORS, {value: amountEth, from: INVESTORS});
-      const vaultAddr = await triForceCrowdsale.vault.call();
-      const vaultBalance = await web3.eth.getBalance(vaultAddr);
-      const balanceInvestor = await token.balanceOf.call(INVESTORS);
-      const totalSupplyPhase1 = await triForceCrowdsale.totalSupply.call();
-
-      assert.equal(vaultBalance.toNumber(), amountEth, 'ether still deposited into the wallet');
-      assert.equal(balanceInvestor.toNumber(), tokensAmount, 'balance still added for investor');
-      assert.equal(totalSupplyPhase1.toNumber(), tokensAmount, 'balance not added to totalSupply');
-    });
-  });
-
-  describe('#purchaseCaps', () => {
-
-    it('should allow investors to buy tokens just equal to tokenCap in the 1st phase', async () => {
-      const INVESTORS = accounts[4];
-      const amountEth1 = new BigNumber(1500000000).div(rate).div(1.25).toNumber();
-      let amountEth = amountEth1
-      amountEth = amountEth * MOCK_ONE_ETH;
-
-      const tokensAmount = amountEth * rate * 1.25;
-      //  buy tokens
-      await triForceCrowdsale.buyTokens(INVESTORS, {value: amountEth, from: INVESTORS});
-      const vaultAddr = await triForceCrowdsale.vault.call();
-      const vaultBalance = await web3.eth.getBalance(vaultAddr);
-      const balanceInvestor = await token.balanceOf.call(INVESTORS);
-      const totalSupplyPhase1 = await triForceCrowdsale.totalSupply.call();
-
-      assert.equal(vaultBalance.toNumber(), amountEth, 'ether still deposited into the wallet');
-      assert.equal(balanceInvestor.toNumber(), tokensAmount, 'balance still added for investor');
-      assert.equal(totalSupplyPhase1.toNumber(), tokensAmount, 'balance not added to totalSupply');
-    });
-  });
-
-  describe('#purchaseOverCaps', () => {
-
-    it('should not allow investors to buy tokens above tokenCap in the 1st phase', async () => {
-      const INVESTORS = accounts[4];
-      const amountEth1 = new BigNumber(1500000000).div(rate).div(1.25).toNumber() + 1;
-      let amountEth = amountEth1
-      amountEth = amountEth * MOCK_ONE_ETH;
-
-      const tokensAmount = amountEth * rate * 1.25;
-      //  buy tokens
-      try {
-        await triForceCrowdsale.buyTokens(INVESTORS, {value: amountEth, from: INVESTORS});
-        assert.fail('should have failed before');
-      } catch (error) {
-        assertJump(error);
-      }
-
-      const vaultAddr = await triForceCrowdsale.vault.call();
-      const vaultBalance = await web3.eth.getBalance(vaultAddr);
-      const balanceInvestor = await token.balanceOf.call(INVESTORS);
-      const totalSupplyPhase1 = await triForceCrowdsale.totalSupply.call();
-      assert.equal(vaultBalance.toNumber(), 0, 'ether still deposited into the wallet');
-      assert.equal(balanceInvestor.toNumber(), 0, 'balance still added for investor');
-      assert.equal(totalSupplyPhase1.toNumber(), 0, 'balance still added to totalSupply');
-    });
   });
 
   it('should allow to buy Token when not Paused', async () => {

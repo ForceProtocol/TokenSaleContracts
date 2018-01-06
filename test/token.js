@@ -319,7 +319,6 @@ contract('Token', (accounts) => {
     let endTime;
     let rate;
     let softCap;
-    let tokenCap;
     let triForceCrowdsale;
 
     beforeEach(async () => {
@@ -329,7 +328,6 @@ contract('Token', (accounts) => {
       endTime = startTime + 86400*5;
       rate = 15000;
       softCap = 1600e18;
-      tokenCap = 1500000000e18;
 
       token = await Token.new();
       dataCentre = await DataCentre.new();
@@ -337,7 +335,7 @@ contract('Token', (accounts) => {
       await whitelist.addWhiteListed(accounts[4]);
       multisigWallet = await MultisigWallet.new(FOUNDERS, 3, 10*MOCK_ONE_ETH);
       controller = await Controller.new(token.address, dataCentre.address)
-      triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, tokenCap, softCap, whitelist.address);
+      triForceCrowdsale = await MockTriForceNetworkCrowdsale.new(startTime, endTime, rate, multisigWallet.address, controller.address, softCap, whitelist.address);
       await controller.addAdmin(triForceCrowdsale.address);
       await token.transferOwnership(controller.address);
       await dataCentre.transferOwnership(controller.address);
