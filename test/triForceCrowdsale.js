@@ -124,6 +124,34 @@ contract('TriForceCrowdsale', (accounts) => {
   });
 
 
+  describe('#swapRates', () => {
+
+    it('should return bonusFactor of 125 initially', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(0)).toNumber(), 125);
+    });
+
+    it('should return bonusFactor of 120 after sale of 15000000 tokens', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(15000000e18)).toNumber(), 120);
+    });
+
+    it('should return bonusFactor of 110 after sale of 15000000 tokens', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(45000000e18)).toNumber(), 110);
+    });
+
+    it('should return bonusFactor of 105 after sale of 15000000 tokens', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(120000000e18)).toNumber(), 105);
+    });
+
+    it('should return bonusFactor of 103 after sale of 15000000 tokens', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(570000000e18)).toNumber(), 103);
+    });
+
+    it('should return bonusFactor of 100 after sale of 15000000 tokens', async () => {
+      assert.equal((await triForceCrowdsale.inflateTotalSupply.call(1170000000e18)).toNumber(), 100);
+    });
+
+ });
+
   describe('#purchase', () => {
 
     it('should not allow investors to buy tokens for less that 0.1 eth', async () => {
@@ -160,6 +188,23 @@ contract('TriForceCrowdsale', (accounts) => {
 
       assert.equal(vaultBalance.toNumber(), 0, 'ether not deposited into the wallet');
       assert.equal(tokensBalance.toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
+    });
+  
+    it('should allow investors to buy tokens by sending ether to crowdsale contract', async () => {
+      const INVESTOR = accounts[4];
+      const totalSupplyBefore = await token.totalSupply.call();
+
+      // buy tokens
+      await triForceCrowdsale.buyTokens(INVESTOR, {value: MOCK_ONE_ETH, from: INVESTOR});
+      await web3.eth.sendTransaction({from: INVESTOR, to: triForceCrowdsale.address, value: MOCK_ONE_ETH});
+      const vaultAddr = await triForceCrowdsale.vault.call();
+      const vaultBalance = await web3.eth.getBalance(vaultAddr);
+      const tokensBalance = await token.balanceOf.call(INVESTOR);
+      const totalSupplyAfter = await token.totalSupply.call();
+      const tokensAmount = new BigNumber(2 * MOCK_ONE_ETH).mul(rate * 1.25);
+      assert.equal(vaultBalance.toNumber(), 2 * MOCK_ONE_ETH, 'ether not deposited into the wallet');
+      assert.equal(tokensBalance.toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
+      assert.equal(totalSupplyAfter.sub(totalSupplyBefore).toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
     });
 
     it('should allow investors to buy tokens with token bonus of 25%', async () => {

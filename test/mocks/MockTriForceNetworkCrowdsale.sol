@@ -57,4 +57,9 @@ contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
       return 100;
     }
   }
+
+  function inflateTotalSupply(uint256 newSupply) public constant returns (uint256) {
+    totalSupply = newSupply;
+    return super.bonusFactor();
+  }
 }
