@@ -16,9 +16,8 @@ import "../../contracts/triForceNetwork/TriForceNetworkCrowdsale.sol";
  */
 contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
 
-
-  function MockTriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address controller, uint256 _tokenCap, uint256 _softCap, address _whitelist)
-    TriForceNetworkCrowdsale(_startTime, _endTime, _rate, _wallet, controller, _tokenCap, _softCap, _whitelist)
+  function MockTriForceNetworkCrowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address controller, uint256 _softCap, address _whitelist)
+    TriForceNetworkCrowdsale(_startTime, _endTime, _rate, _wallet, controller, _softCap, _whitelist)
   {
 
   }
@@ -26,8 +25,6 @@ contract MockTriForceNetworkCrowdsale is TriForceNetworkCrowdsale {
   function diluteCaps() public {
     // diluting all caps by 10^6 for testing
     goal = goal.div(1e6);
-    tokenCap = tokenCap.div(1e6);
-
   }
 
   // @return true if the transaction can buy tokens

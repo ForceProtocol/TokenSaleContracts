@@ -28,9 +28,15 @@ contract CrowdsaleBase {
     wallet = _wallet;
   }
 
-  function validPurchase() internal constant returns (bool);
   function forwardFunds() internal;
-  
+
+  // @return true if the transaction can buy tokens
+  function validPurchase() internal constant returns (bool) {
+    bool withinPeriod = now >= startTime && now <= endTime;
+    bool minPurchase = msg.value >= 1e17;
+    return withinPeriod && minPurchase;
+  }
+
   // @return true if crowdsale event has ended
   function hasEnded() public constant returns (bool) {
     return now > endTime;
@@ -51,7 +57,6 @@ contract CrowdsaleBase {
 
     ControllerInterface(controller).mint(beneficiary, tokens);
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
-
     forwardFunds();
   }
 

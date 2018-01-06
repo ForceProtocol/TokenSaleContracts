@@ -1,14 +1,14 @@
 pragma solidity ^0.4.11;
 
 import '../ownership/Ownable.sol';
-import './singlestage/TokenCappedCrowdsale.sol';
+import './singlestage/Crowdsale.sol';
 
 /**
  * @title FinalizableCrowdsale
  * @dev Extension of Crowdsale where an owner can do extra work
  * after finishing.
  */
-contract FinalizableCrowdsale is TokenCappedCrowdsale, Ownable {
+contract FinalizableCrowdsale is Crowdsale, Ownable {
 
   bool public isFinalized = false;
 

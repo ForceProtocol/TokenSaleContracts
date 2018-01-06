@@ -13,6 +13,7 @@ import '../CrowdsaleBase.sol';
 contract Crowdsale is CrowdsaleBase {
 
   uint256 public rate;
+  uint public totalSupply;
 
   function Crowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address _controller) public
     CrowdsaleBase(_startTime, _wallet, _controller)
@@ -24,8 +25,4 @@ contract Crowdsale is CrowdsaleBase {
     rate = _rate;
   }
 
-  // low level tokenAddr purchase function
-  function buyTokens(address beneficiary) public payable {
-    _buyTokens(beneficiary, rate);
-  }
 }

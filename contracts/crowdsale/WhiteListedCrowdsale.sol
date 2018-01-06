@@ -21,8 +21,4 @@ contract WhiteListedCrowdsale is Crowdsale {
     whitelistAddr = _whiteListAddr;
   }
 
-  // low level token purchase function
-  function buyTokens(address beneficiary) public onlyWhiteListed(beneficiary) payable {
-    super.buyTokens(beneficiary);
-  }
 }
