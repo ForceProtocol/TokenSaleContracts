@@ -10,7 +10,8 @@ contract CrowdsaleControl is SimpleControl {
   bool public mintingFinished = false;
 
   modifier canMint(bool status) {
-    require(!mintingFinished == status);
+    var(adminStatus, ) = isAdmin(msg.sender);
+    require(!mintingFinished == status || adminStatus);
     _;
   }
 

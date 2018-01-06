@@ -19,7 +19,8 @@ contract Pausable is Governable {
    * @dev Modifier to make a function callable only when the contract is not paused.
    */
   modifier whenNotPaused() {
-    require(!paused);
+    var(adminStatus, ) = isAdmin(msg.sender);
+    require(!paused || adminStatus);
     _;
   }
 
@@ -27,7 +28,8 @@ contract Pausable is Governable {
    * @dev Modifier to make a function callable only when the contract is paused.
    */
   modifier whenPaused() {
-    require(paused);
+    var(adminStatus, ) = isAdmin(msg.sender);
+    require(paused || adminStatus);
     _;
   }
 
