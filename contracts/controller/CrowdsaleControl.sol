@@ -9,8 +9,8 @@ contract CrowdsaleControl is SimpleControl {
   // not necessary to store in data centre
   bool public mintingFinished = false;
 
-  modifier canMint(bool status) {
-    var(adminStatus, ) = isAdmin(msg.sender);
+  modifier canMint(bool status, address _to) {
+    var(adminStatus, ) = isAdmin(_to);
     require(!mintingFinished == status || adminStatus);
     _;
   }
@@ -22,7 +22,7 @@ contract CrowdsaleControl is SimpleControl {
   }
 
 
-  function mint(address _to, uint256 _amount) whenNotPaused canMint(true) onlyAdmins public returns (bool) {
+  function mint(address _to, uint256 _amount) whenNotPaused(_to) canMint(true, msg.sender) onlyAdmins public returns (bool) {
     _setTotalSupply(totalSupply().add(_amount));
     _setBalanceOf(_to, balanceOf(_to).add(_amount));
     Token(satellite).mint(_to, _amount);

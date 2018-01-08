@@ -51,14 +51,15 @@ contract('Token', (accounts) => {
       const BENEFICIARY = accounts[5];
       const swapRate = new BigNumber(256);
       const tokensAmount = swapRate.mul(MOCK_ONE_ETH);
+      await token.transfer(BENEFICIARY, tokensAmount, {from: INVESTOR});
 
       try {
-        await token.transfer(BENEFICIARY, tokensAmount, {from: INVESTOR});
+        await token.transfer(INVESTOR, tokensAmount, {from: BENEFICIARY});
       } catch (error) {
         assertJump(error);
       }
       const tokenBalanceTransfered = await token.balanceOf.call(BENEFICIARY);
-      assert.equal(0, tokenBalanceTransfered.toNumber(), 'tokens not transferred');
+      assert.equal(tokensAmount, tokenBalanceTransfered.toNumber(), 'tokens not transferred');
     });
   });
 
