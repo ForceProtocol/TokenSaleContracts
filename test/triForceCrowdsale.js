@@ -190,6 +190,22 @@ contract('TriForceCrowdsale', (accounts) => {
       assert.equal(tokensBalance.toNumber(), 0, 'tokens not deposited into the INVESTOR balance');
     });
 
+    it('should allow investors to buy tokens by sending ether to crowdsale contract', async () => {
+     const INVESTOR = accounts[4];
+     const totalSupplyBefore = await token.totalSupply.call();
+
+     // buy tokens
+     await web3.eth.sendTransaction({from: INVESTOR, to: triForceCrowdsale.address, value: MOCK_ONE_ETH, gas: 4500000});
+     const vaultAddr = await triForceCrowdsale.vault.call();
+     const vaultBalance = await web3.eth.getBalance(vaultAddr);
+     const tokensBalance = await token.balanceOf.call(INVESTOR);
+     const totalSupplyAfter = await token.totalSupply.call();
+     const tokensAmount = new BigNumber(MOCK_ONE_ETH).mul(rate * 1.25);
+     assert.equal(vaultBalance.toNumber(), MOCK_ONE_ETH, 'ether not deposited into the wallet');
+     assert.equal(tokensBalance.toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
+     assert.equal(totalSupplyAfter.sub(totalSupplyBefore).toNumber(), tokensAmount.toNumber(), 'tokens not deposited into the INVESTOR balance');
+    });
+
     it('should allow investors to buy tokens with token bonus of 25%', async () => {
       const INVESTOR = accounts[4];
       const totalSupplyBefore = await token.totalSupply.call();
