@@ -1,8 +1,8 @@
-var Token = artifacts.require("./contracts/token/Token.sol");
+var Token = artifacts.require("./contracts/triForceNetwork/Force.sol");
 var DataCentre = artifacts.require("./contracts/token/DataCentre.sol");
 var WhiteList = artifacts.require("./contracts/crowdsale/WhiteList.sol");
 var MultisigWallet = artifacts.require("./contracts/multisig/MultiSigWalletWithDailyLimit.sol");
-var Controller = artifacts.require("./contracts/controller/Controller.sol");
+var Controller = artifacts.require("./contracts/triForceNetwork/TriController.sol");
 var TriForceNetworkCrowdsale = artifacts.require("./contracts/triForceNetwork/TriForceNetworkCrowdsale.sol");
 var adminAddress = "0x9fd369E59A286ac28F3E976F5337147CaF88E4D4";
 
