@@ -1,0 +1,14 @@
+node_modules/
+build
+environments/
+*.sol.js
+environments/
+package-lock.json
+
+# test
+xunit_testresults.xml
+
+# test coverage
+coverage/
+coverageEnv/
+coverage.json
