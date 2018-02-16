@@ -84,4 +84,13 @@ contract('RefundVault', function ([_, owner, wallet, investor]) {
     await this.vault.enableRefunds({from: owner}).should.be.fulfilled
     await this.vault.close({from: owner}).should.be.rejectedWith(EVMThrow)
   })
+
+  it('should not allow owner to kill', async function () {
+    await this.vault.deposit(investor, {value, from: owner})
+
+    const balanceBefore = await web3.eth.getBalance(owner);
+    await this.vault.kill(owner, {from: owner, gasPrice: 0}).should.be.fulfilled
+    const balanceAfter = await web3.eth.getBalance(owner);
+    balanceAfter.minus(balanceBefore).should.be.bignumber.equal(value)
+  })
 })

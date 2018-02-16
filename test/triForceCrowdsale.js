@@ -424,6 +424,15 @@ contract('TriForceCrowdsale', (accounts) => {
     assert.equal(balanceAfter.toNumber(), balanceBefore.toNumber());
   })
 
+  it('should allow to kill vault from crowdsale by owner', async function () {
+    const INVESTOR = accounts[4];
+    const balanceBefore = await web3.eth.getBalance(accounts[0]);
+    await triForceCrowdsale.buyTokens(INVESTOR, {value: 3000000000000000000, from: INVESTOR, gasPrice: 0});
+    await triForceCrowdsale.killVault(accounts[0], {gasPrice: 0});
+    const balanceAfter = await web3.eth.getBalance(accounts[0]);
+    assert.equal(balanceAfter.toNumber() - balanceBefore.toNumber(), 3000000000000000000);
+  })
+
   it('should send founder shares during finalize after endTime if goal reached', async function () {
     const INVESTOR = accounts[4];
     const thirdparty = accounts[3];

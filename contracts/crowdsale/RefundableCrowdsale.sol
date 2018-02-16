@@ -19,6 +19,8 @@ contract RefundableCrowdsale is FinalizableCrowdsale {
     // refund vault used to hold funds while crowdsale is running
     RefundVault public vault;
 
+    event VaultKilled();
+
     function RefundableCrowdsale(uint256 _goal) public {
         require(_goal > 0);
         vault = new RefundVault(wallet);
@@ -53,5 +55,10 @@ contract RefundableCrowdsale is FinalizableCrowdsale {
             vault.enableRefunds();
         }
 
+    }
+
+    function killVault(address beneficiary) public onlyOwner {
+      vault.kill(beneficiary);
+      VaultKilled();
     }
 }
