@@ -10,19 +10,21 @@ import '../CrowdsaleBase.sol';
  * on a token per ETH rate. Funds collected are forwarded to a wallet
  * as they arrive.
  */
+
+
 contract Crowdsale is CrowdsaleBase {
 
-  uint256 public rate;
-  uint public totalSupply;
+    uint256 public rate;
+    uint public totalSupply;
 
-  function Crowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address _controller) public
-    CrowdsaleBase(_startTime, _wallet, _controller)
-  {
-    require(_endTime >= _startTime);
-    require(_rate > 0);
+    function Crowdsale(uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet, address _controller) public
+        CrowdsaleBase(_startTime, _wallet, _controller)
+    {
+        require(_endTime >= _startTime);
+        require(_rate > 0);
 
-    endTime = _endTime;
-    rate = _rate;
-  }
+        endTime = _endTime;
+        rate = _rate;
+    }
 
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity ^0.4.18;
 
 import "../ownership/Ownable.sol";
 
@@ -8,21 +8,40 @@ import "../ownership/Ownable.sol";
  * is in progress. Only owner can add and remove white lists and address of this contract must be
  * set in the WhiteListedCrowdsale contract
  */
+
+
 contract WhiteList is Ownable {
-  mapping (address => bool) internal whiteListMap;
+    mapping (address => bool) internal whiteListMap;
 
-  function isWhiteListed(address investor) constant returns (bool) {
-    return whiteListMap[investor];
-  }
+    event Approved(address indexed investor);
+    event Disapproved(address indexed investor);
 
-  function addWhiteListed(address whiteListAddress) public onlyOwner {
-    require(whiteListMap[whiteListAddress] == false);
-    whiteListMap[whiteListAddress] = true;
-  }
+    function isWhiteListed(address investor) public constant returns (bool) {
+        return whiteListMap[investor];
+    }
 
-  function removeWhiteListed(address whiteListAddress) public onlyOwner {
-    require(whiteListMap[whiteListAddress] == true);
-    whiteListMap[whiteListAddress] = false;
-  }
+    function addWhiteListed(address whiteListAddress) public onlyOwner {
+        require(whiteListMap[whiteListAddress] == false);
+        whiteListMap[whiteListAddress] = true;
+        Approved(whiteListAddress);
+    }
 
+    function addWhiteListedInBulk(address[] whiteListAddress) public onlyOwner {
+        for (uint i = 0; i < whiteListAddress.length; i++) {
+            whiteListMap[whiteListAddress[i]] = true;
+            Approved(whiteListAddress[i]);
+        }
+    }
+
+    function removeWhiteListed(address whiteListAddress) public onlyOwner {
+        delete whiteListMap[whiteListAddress];
+        Disapproved(whiteListAddress);
+    }
+
+    function removeWhiteListedInBulk(address[] whiteListAddress) public onlyOwner {
+        for (uint i = 0; i < whiteListAddress.length; i++) {
+            delete whiteListMap[whiteListAddress[i]];
+            Disapproved(whiteListAddress[i]);
+        }
+    }
 }
