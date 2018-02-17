@@ -9,7 +9,7 @@ import '../token/Token.sol';
 contract Force is  Token {
 
     string public constant name = "Force";
-    string public constant symbol = "TRI";
+    string public constant symbol = "FORCE";
     uint8 public constant decimals = 18;
 
 }
